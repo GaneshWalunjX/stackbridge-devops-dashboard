@@ -1,10 +1,22 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from "react-router-dom";
 
-const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = localStorage.getItem('authToken'); // or your auth logic
+function isTokenValid(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expiry = payload.exp * 1000;
+    return Date.now() < expiry;
+  } catch {
+    return false;
+  }
+}
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
-};
+export default function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("token");
 
-export default ProtectedRoute;
+  if (!token || !isTokenValid(token)) {
+    localStorage.removeItem("token");
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}

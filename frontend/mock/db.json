@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@example.com",
+      "password": "admin123",
+      "token": "mock.jwt.token"
+    }
+  ],
+  "dashboard": {
+    "pipelines": ["Build", "Test", "Deploy"],
+    "containers": ["nginx", "redis", "node-app"],
+    "metrics": { "cpu": "42%", "memory": "68%" }
+  }
+}
