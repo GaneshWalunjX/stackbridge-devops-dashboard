@@ -1,18 +1,40 @@
-const pool = require('../../config/db');
-const bcrypt = require('bcrypt');
+// backend/src/models/User.js
 
-const createUser = async (email, password) => {
-  const hashed = await bcrypt.hash(password, 10);
-  const result = await pool.query(
-    'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email',
-    [email, hashed]
-  );
-  return result.rows[0];
+const { DataTypes } = require('sequelize');
+const sequelize = require('../../config/db'); 
+
+// 🧬 Define User model
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  email: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: false,
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+}, {
+  tableName: 'Users', // ensure this matches your DB table
+  timestamps: false,  // disable if you're not using createdAt/updatedAt
+});
+
+// 🔍 Utility function to find user by email
+async function findUserByEmail(email) {
+  try {
+    return await User.findOne({ where: { email } });
+  } catch (err) {
+    console.error('findUserByEmail error:', err.stack || err.message || err);
+    throw err;
+  }
+}
+
+module.exports = {
+  User,
+  findUserByEmail,
 };
-
-const findUserByEmail = async (email) => {
-  const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-  return result.rows[0];
-};
-
-module.exports = { createUser, findUserByEmail };

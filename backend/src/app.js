@@ -1,26 +1,27 @@
+// src/app.js
+
 const express = require('express');
-const dotenv = require('dotenv');
 const cors = require('cors');
+const dotenv = require('dotenv');
+const bodyParser = require('body-parser');
+
 const authRoutes = require('./routes/authRoutes');
-const projectRoutes = require('./routes/project/projectRoutes');
 const taskRoutes = require('./routes/task/taskRoutes');
 
 dotenv.config();
 
 const app = express();
 
-// 🔧 Middleware
+// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// 🚪 Routes
+// Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 
-// 🛠️ Healthcheck
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Healthcheck
+app.get('/ping', (req, res) => res.send('Backend is alive'));
 
 module.exports = app;
