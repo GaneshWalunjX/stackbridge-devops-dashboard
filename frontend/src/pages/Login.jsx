@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -23,11 +22,16 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("/api/login", {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server returned non-JSON response");
+      }
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Login failed");
@@ -35,7 +39,7 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Unexpected error");
     }
   };
 
@@ -79,3 +83,4 @@ export default function Login() {
     </div>
   );
 }
+
