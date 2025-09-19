@@ -1,26 +1,4 @@
-version: '3.8'
-
 services:
-  db:
-    image: postgres:15
-    container_name: stackbridge-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: yourpassword
-      POSTGRES_DB: stackbridge
-    ports:
-      - "5432:5432"
-    volumes:
-      - stackbridge-volume:/var/lib/postgresql/data
-    networks:
-      - stackbridge-network
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   backend:
     build:
       context: ./backend
@@ -35,7 +13,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - stackbridge-volume:/var/lib/postgresql/data
+      - ./backend:/app
     networks:
       - stackbridge-network
 
@@ -56,6 +34,26 @@ services:
       retries: 3
     networks:
       - stackbridge-network
+
+  db:
+    image: postgres:15
+    container_name: stackbridge-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: stackbridge
+    ports:
+      - "5432:5432"
+    volumes:
+      - stackbridge-volume:/var/lib/postgresql/data
+    networks:
+      - stackbridge-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   stackbridge-volume:
