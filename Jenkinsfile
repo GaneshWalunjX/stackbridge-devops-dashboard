@@ -53,10 +53,10 @@ pipeline {
         docker run -d --name frontend -p 3000:3000 %REGISTRY%/%IMAGE_FRONTEND%
 
         echo Checking backend health...
-        curl -f %HEALTHCHECK_BACKEND% || (echo Backend healthcheck failed && exit /b 1)
+        curl -s -f %HEALTHCHECK_BACKEND% >nul || (echo Backend healthcheck failed && exit /b 1)
 
         echo Checking frontend health...
-        curl -f %HEALTHCHECK_FRONTEND% || (echo Frontend healthcheck failed && exit /b 1)
+        curl -s -f %HEALTHCHECK_FRONTEND% >nul || (echo Frontend healthcheck failed && exit /b 1)
         """
       }
     }
