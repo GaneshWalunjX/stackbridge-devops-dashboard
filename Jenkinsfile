@@ -47,7 +47,7 @@ pipeline {
       steps {
         bat """
         docker-compose up -d db
-        timeout /t 10
+        timeout /t 15 >nul
 
         docker run -d --name backend -p 5000:5000 %REGISTRY%/%IMAGE_BACKEND%
         docker run -d --name frontend -p 3000:3000 %REGISTRY%/%IMAGE_FRONTEND%
