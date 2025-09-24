@@ -2,10 +2,10 @@ pipeline {
   agent any
 
   environment {
-    REGISTRY = "docker.io/ganesha7"
-    IMAGE_BACKEND = "stackbridge-devops-dashboard-backend:${BUILD_NUMBER}"
-    IMAGE_FRONTEND = "stackbridge-devops-dashboard-frontend:${BUILD_NUMBER}"
-    HEALTHCHECK_BACKEND = "http://localhost:5000/ping"
+    REGISTRY             = "docker.io/ganesha7"
+    IMAGE_BACKEND        = "stackbridge-devops-dashboard-backend:${BUILD_NUMBER}"
+    IMAGE_FRONTEND       = "stackbridge-devops-dashboard-frontend:${BUILD_NUMBER}"
+    HEALTHCHECK_BACKEND  = "http://localhost:5000/ping"
     HEALTHCHECK_FRONTEND = "http://localhost:3000"
   }
 
@@ -23,7 +23,11 @@ pipeline {
 
     stage('DockerHub Login') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'stackbridge-dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+        withCredentials([usernamePassword(
+          credentialsId: 'stackbridge-dockerhub-creds',
+          usernameVariable: 'DOCKER_USER',
+          passwordVariable: 'DOCKER_PASS'
+        )]) {
           sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
         }
       }
@@ -47,8 +51,8 @@ pipeline {
           sleep 20
           docker run -d --name backend -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
           docker run -d --name frontend -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
-          curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
-          curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
+          docker exec backend curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
+          docker exec frontend curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
         '''
       }
     }
