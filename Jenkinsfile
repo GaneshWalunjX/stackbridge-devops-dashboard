@@ -24,9 +24,7 @@ pipeline {
     stage('DockerHub Login') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'stackbridge-dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          sh '''
-          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-          '''
+          sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
         }
       }
     }
@@ -34,11 +32,10 @@ pipeline {
     stage('Build and Push Images') {
       steps {
         sh '''
-        docker build --pull --no-cache -t $REGISTRY/$IMAGE_BACKEND backend
-        docker push $REGISTRY/$IMAGE_BACKEND
-
-        docker build --pull --no-cache -t $REGISTRY/$IMAGE_FRONTEND frontend
-        docker push $REGISTRY/$IMAGE_FRONTEND
+          docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_BACKEND} backend
+          docker push ${REGISTRY}/${IMAGE_BACKEND}
+          docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_FRONTEND} frontend
+          docker push ${REGISTRY}/${IMAGE_FRONTEND}
         '''
       }
     }
@@ -46,17 +43,12 @@ pipeline {
     stage('Healthcheck') {
       steps {
         sh '''
-        docker-compose up -d db
-        sleep 20
-
-        docker run -d --name backend -p 5000:5000 $REGISTRY/$IMAGE_BACKEND
-        docker run -d --name frontend -p 3000:3000 $REGISTRY/$IMAGE_FRONTEND
-
-        echo "Checking backend health..."
-        curl -s -f $HEALTHCHECK_BACKEND > /dev/null || (echo "Backend healthcheck failed" && exit 1)
-
-        echo "Checking frontend health..."
-        curl -s -f $HEALTHCHECK_FRONTEND > /dev/null || (echo "Frontend healthcheck failed" && exit 1)
+          docker-compose up -d db
+          sleep 20
+          docker run -d --name backend -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
+          docker run -d --name frontend -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
+          curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
+          curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
         '''
       }
     }
@@ -69,12 +61,12 @@ pipeline {
     failure {
       echo 'Pipeline failed. Check logs and container status.'
     }
-    cleanup {
+    always {
       sh '''
-      docker logs backend > backend.log || echo "No backend logs found"
-      docker logs frontend > frontend.log || echo "No frontend logs found"
-      docker rm -f backend frontend || echo "Containers already removed"
-      docker-compose down || echo "Compose already stopped"
+        docker logs backend > backend.log || true
+        docker logs frontend > frontend.log || true
+        docker rm -f backend frontend || true
+        docker-compose down || true
       '''
     }
   }
