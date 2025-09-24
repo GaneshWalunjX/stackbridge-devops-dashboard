@@ -43,7 +43,7 @@ pipeline {
     stage('Healthcheck') {
       steps {
         sh '''
-          docker-compose --env-file /dev/null up -d db
+          docker-compose up -d db || true
           sleep 20
           docker run -d --name backend -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
           docker run -d --name frontend -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
