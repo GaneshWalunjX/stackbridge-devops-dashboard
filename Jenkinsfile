@@ -51,8 +51,8 @@ pipeline {
           sleep 20
           docker run -d --name backend -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
           docker run -d --name frontend -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
-          docker exec backend curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
-          docker exec frontend curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
+          docker run --rm --network container:backend curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
+          docker run --rm --network container:frontend curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
         '''
       }
     }
