@@ -1,0 +1,10 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: db-config
+  namespace: stackbridge-lab
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: stackbridge
+  POSTGRES_USER: ganesh

@@ -1,0 +1,12 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: backend-config
+  namespace: stackbridge-lab
+  labels:
+    app: backend
+data:
+  DB_HOST: postgres.stackbridge-lab.svc.cluster.local
+  DB_PORT: "5432"
+  DB_NAME: stackbridge
+  DB_USER: ganesh

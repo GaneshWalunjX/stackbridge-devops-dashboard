@@ -1,0 +1,9 @@
+# namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stackbridge-lab
+  labels:
+    project: stackbridge-devops-dashboard
+    owner: ganesh
+    purpose: devops-lab
