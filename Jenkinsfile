@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'docker:latest'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent any
 
   environment {
     REGISTRY             = "docker.io/ganesha7"
@@ -30,8 +25,7 @@ pipeline {
     stage('Prune Workspace') {
       steps {
         sh '''
-          rm -rf frontend/node_modules || true
-          rm -rf backend/node_modules || true
+          find . -type d -name "node_modules" -exec rm -rf {} +
         '''
       }
     }
