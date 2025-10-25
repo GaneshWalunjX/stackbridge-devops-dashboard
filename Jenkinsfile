@@ -7,6 +7,7 @@ pipeline {
     IMAGE_FRONTEND       = "stackbridge-devops-dashboard-frontend:${BUILD_NUMBER}"
     HEALTHCHECK_BACKEND  = "http://localhost:5000/ping"
     HEALTHCHECK_FRONTEND = "http://localhost:3000"
+    K8S_MANIFESTS        = "k8s" // folder containing your .yaml files
   }
 
   options {
@@ -53,6 +54,28 @@ pipeline {
           docker run -d --name frontend -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
           docker run --rm --network container:backend curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
           docker run --rm --network container:frontend curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
+        '''
+      }
+    }
+
+    stage('Deploy to Kubernetes') {
+      steps {
+        sh '''
+          kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
+
+          kubectl apply -f ${K8S_MANIFESTS}/db-pv.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/db-deployment.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/db-service.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/db-vpa.yaml
+
+          kubectl apply -f ${K8S_MANIFESTS}/backend-deployment.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/backend-service.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/backend-vpa.yaml
+
+          kubectl apply -f ${K8S_MANIFESTS}/frontend-deployment.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/frontend-service.yaml
+          kubectl apply -f ${K8S_MANIFESTS}/frontend-vpa.yaml
         '''
       }
     }
