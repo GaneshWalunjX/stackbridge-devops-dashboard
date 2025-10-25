@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'docker:latest'
+      args '-v /var/run/docker.sock:/var/run/docker.sock'
+    }
+  }
 
   environment {
     REGISTRY             = "docker.io/ganesha7"
@@ -18,16 +23,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        withCredentials([usernamePassword(
-          credentialsId: 'github-creds',
-          usernameVariable: 'GIT_USER',
-          passwordVariable: 'GIT_TOKEN'
-        )]) {
-          sh '''
-            rm -rf .git
-            git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GaneshWalunjX/stackbridge-devops-dashboard.git .
-          '''
-        }
+        checkout scm
       }
     }
 
