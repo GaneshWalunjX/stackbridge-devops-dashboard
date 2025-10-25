@@ -7,7 +7,7 @@ pipeline {
     IMAGE_FRONTEND       = "stackbridge-devops-dashboard-frontend:${BUILD_NUMBER}"
     HEALTHCHECK_BACKEND  = "http://localhost:5000/ping"
     HEALTHCHECK_FRONTEND = "http://localhost:3000"
-    K8S_MANIFESTS        = "k8s" // folder containing your .yaml files
+    K8S_MANIFESTS        = "k8s"
   }
 
   options {
@@ -18,14 +18,32 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
+        withCredentials([usernamePassword(
+          credentialsId: 'github-creds',
+          usernameVariable: 'GIT_USER',
+          passwordVariable: 'GIT_TOKEN'
+        )]) {
+          sh '''
+            rm -rf .git
+            git clone https://${GIT_USER}:${GIT_TOKEN}@github.com/GaneshWalunjX/stackbridge-devops-dashboard.git .
+          '''
+        }
+      }
+    }
+
+    stage('Prune Workspace') {
+      steps {
+        sh '''
+          rm -rf frontend/node_modules || true
+          rm -rf backend/node_modules || true
+        '''
       }
     }
 
     stage('DockerHub Login') {
       steps {
         withCredentials([usernamePassword(
-          credentialsId: 'stackbridge-dockerhub-creds',
+          credentialsId: 'dockerhub-creds',
           usernameVariable: 'DOCKER_USER',
           passwordVariable: 'DOCKER_PASS'
         )]) {
@@ -48,12 +66,13 @@ pipeline {
     stage('Healthcheck') {
       steps {
         sh '''
+          docker network create stackbridge-net || true
           docker-compose up -d db || true
           sleep 20
-          docker run -d --name backend -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
-          docker run -d --name frontend -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
-          docker run --rm --network container:backend curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
-          docker run --rm --network container:frontend curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
+          docker run -d --rm --name backend --network stackbridge-net -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
+          docker run -d --rm --name frontend --network stackbridge-net -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
+          docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
+          docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
         '''
       }
     }
@@ -63,16 +82,19 @@ pipeline {
         sh '''
           kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
 
+          # Database
           kubectl apply -f ${K8S_MANIFESTS}/db-pv.yaml
           kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
           kubectl apply -f ${K8S_MANIFESTS}/db-deployment.yaml
           kubectl apply -f ${K8S_MANIFESTS}/db-service.yaml
           kubectl apply -f ${K8S_MANIFESTS}/db-vpa.yaml
 
+          # Backend
           kubectl apply -f ${K8S_MANIFESTS}/backend-deployment.yaml
           kubectl apply -f ${K8S_MANIFESTS}/backend-service.yaml
           kubectl apply -f ${K8S_MANIFESTS}/backend-vpa.yaml
 
+          # Frontend
           kubectl apply -f ${K8S_MANIFESTS}/frontend-deployment.yaml
           kubectl apply -f ${K8S_MANIFESTS}/frontend-service.yaml
           kubectl apply -f ${K8S_MANIFESTS}/frontend-vpa.yaml
@@ -94,6 +116,7 @@ pipeline {
         docker logs frontend > frontend.log || true
         docker rm -f backend frontend || true
         docker-compose down || true
+        docker network rm stackbridge-net || true
       '''
     }
   }
