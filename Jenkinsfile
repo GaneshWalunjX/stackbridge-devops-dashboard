@@ -29,9 +29,7 @@ pipeline {
 
     stage('Prune Workspace') {
       steps {
-        sh '''
-          find . -type d -name "node_modules" -exec rm -rf {} +
-        '''
+        sh 'find . -type d -name "node_modules" -exec rm -rf {} +'
       }
     }
 
@@ -49,51 +47,61 @@ pipeline {
 
     stage('Build and Push Images') {
       steps {
-        sh '''
-          docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_BACKEND} backend
-          docker push ${REGISTRY}/${IMAGE_BACKEND}
-          docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_FRONTEND} frontend
-          docker push ${REGISTRY}/${IMAGE_FRONTEND}
-        '''
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+          timeout(time: 10, unit: 'MINUTES') {
+            sh '''
+              docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_BACKEND} backend
+              docker push ${REGISTRY}/${IMAGE_BACKEND}
+              docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_FRONTEND} frontend
+              docker push ${REGISTRY}/${IMAGE_FRONTEND}
+            '''
+          }
+        }
       }
     }
 
     stage('Healthcheck') {
       steps {
-        sh '''
-          docker network create stackbridge-net || true
-          docker-compose up -d db || true
-          sleep 20
-          docker run -d --rm --name backend --network stackbridge-net -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
-          docker run -d --rm --name frontend --network stackbridge-net -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
-          docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
-          docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
-        '''
+        catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+          sh '''
+            docker system prune -af || true
+            docker network create stackbridge-net || true
+            docker-compose up -d db || true
+            sleep 20
+            docker run -d --rm --name backend --network stackbridge-net -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
+            docker run -d --rm --name frontend --network stackbridge-net -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
+            docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
+            docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
+          '''
+        }
       }
     }
 
     stage('Deploy to Kubernetes') {
       steps {
-        sh '''
-          kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+          sh '''
+            kubectl version --client || (echo "kubectl not available" && exit 1)
+            kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
 
-          # Database
-          kubectl apply -f ${K8S_MANIFESTS}/db-pv.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-deployment.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-service.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-vpa.yaml
+            # Database
+            kubectl apply -f ${K8S_MANIFESTS}/db-pv.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-deployment.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-service.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-vpa.yaml
 
-          # Backend
-          kubectl apply -f ${K8S_MANIFESTS}/backend-deployment.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/backend-service.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/backend-vpa.yaml
+            # Backend
+            kubectl apply -f ${K8S_MANIFESTS}/backend-deployment.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/backend-service.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/backend-vpa.yaml
 
-          # Frontend
-          kubectl apply -f ${K8S_MANIFESTS}/frontend-deployment.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/frontend-service.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/frontend-vpa.yaml
-        '''
+            # Frontend
+            kubectl apply -f ${K8S_MANIFESTS}/frontend-deployment.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/frontend-service.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/frontend-vpa.yaml
+          '''
+        }
       }
     }
   }
