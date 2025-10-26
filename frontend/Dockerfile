@@ -10,7 +10,7 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Serve React build from /frontend/
-COPY --from=build /app/build /usr/share/nginx/html/frontend
+COPY --from=build /app/build /usr/share/nginx/html
 
 CMD ["nginx", "-g", "daemon off;"]
 
