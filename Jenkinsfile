@@ -10,8 +10,8 @@ pipeline {
     REGISTRY             = "docker.io/ganesha7"
     IMAGE_BACKEND        = "stackbridge-devops-dashboard-backend:${BUILD_NUMBER}"
     IMAGE_FRONTEND       = "stackbridge-devops-dashboard-frontend:${BUILD_NUMBER}"
-    HEALTHCHECK_BACKEND  = "http://localhost:5000/ping"
-    HEALTHCHECK_FRONTEND = "http://localhost:3000"
+    HEALTHCHECK_BACKEND  = "http://stackbridge-backend:5000/ping"
+    HEALTHCHECK_FRONTEND = "http://stackbridge-frontend"
     K8S_MANIFESTS        = "k8s"
   }
 
@@ -71,13 +71,17 @@ pipeline {
         catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
           sh '''
             docker system prune -af || true
-            docker network create stackbridge-net || true
-            docker-compose up -d db || true
+            docker network create stackbridge-network || true
+
+            docker-compose -f docker-compose.yml up -d db
             sleep 20
-            docker run -d --rm --name backend --network stackbridge-net -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
-            docker run -d --rm --name frontend --network stackbridge-net -p 3000:3000 ${REGISTRY}/${IMAGE_FRONTEND}
-            docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
-            docker run --rm --network stackbridge-net curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
+
+            docker run -d --name stackbridge-backend --network stackbridge-network -p 5000:5000 ${REGISTRY}/${IMAGE_BACKEND}
+            docker run -d --name stackbridge-frontend --network stackbridge-network -p 3000:80 ${REGISTRY}/${IMAGE_FRONTEND}
+            sleep 10
+
+            docker run --rm --network stackbridge-network curlimages/curl -fsS ${HEALTHCHECK_BACKEND} || (echo "Backend healthcheck failed" && exit 1)
+            docker run --rm --network stackbridge-network curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
           '''
         }
       }
@@ -95,17 +99,14 @@ pipeline {
             kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
             kubectl apply -f ${K8S_MANIFESTS}/db-deployment.yaml
             kubectl apply -f ${K8S_MANIFESTS}/db-service.yaml
-            kubectl apply -f ${K8S_MANIFESTS}/db-vpa.yaml
 
             # Backend
             kubectl apply -f ${K8S_MANIFESTS}/backend-deployment.yaml
             kubectl apply -f ${K8S_MANIFESTS}/backend-service.yaml
-            kubectl apply -f ${K8S_MANIFESTS}/backend-vpa.yaml
 
             # Frontend
             kubectl apply -f ${K8S_MANIFESTS}/frontend-deployment.yaml
             kubectl apply -f ${K8S_MANIFESTS}/frontend-service.yaml
-            kubectl apply -f ${K8S_MANIFESTS}/frontend-vpa.yaml
           '''
         }
       }
@@ -121,11 +122,11 @@ pipeline {
     }
     always {
       sh '''
-        docker logs backend > backend.log || true
-        docker logs frontend > frontend.log || true
-        docker rm -f backend frontend || true
-        docker-compose down || true
-        docker network rm stackbridge-net || true
+        docker logs stackbridge-backend > backend.log || true
+        docker logs stackbridge-frontend > frontend.log || true
+        docker rm -f stackbridge-backend stackbridge-frontend || true
+        docker-compose -f docker-compose.yml down || true
+        docker network rm stackbridge-network || true
       '''
     }
   }
