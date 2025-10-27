@@ -51,6 +51,24 @@ pipeline {
       }
     }
 
+    stage('Test Backend') {
+      steps {
+        sh '''
+          docker build -t backend-test backend
+          docker run --rm backend-test npm test || echo "Backend tests failed"
+        '''
+      }
+    }
+
+    stage('Lint Frontend') {
+      steps {
+        sh '''
+          docker build -t frontend-test frontend
+          docker run --rm frontend-test npm run lint || echo "Frontend lint failed"
+        '''
+      }
+    }
+
     stage('Build and Push Images') {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
@@ -82,6 +100,15 @@ pipeline {
             docker run --rm --network stackbridge-network curlimages/curl -fsS ${HEALTHCHECK_FRONTEND} || (echo "Frontend healthcheck failed" && exit 1)
           '''
         }
+      }
+    }
+
+    stage('Inject Image Tags') {
+      steps {
+        sh '''
+          sed -i "s|image: .*stackbridge-devops-dashboard-backend.*|image: ${REGISTRY}/${IMAGE_BACKEND}|" ${K8S_MANIFESTS}/backend-deployment.yaml
+          sed -i "s|image: .*stackbridge-devops-dashboard-frontend.*|image: ${REGISTRY}/${IMAGE_FRONTEND}|" ${K8S_MANIFESTS}/frontend-deployment.yaml
+        '''
       }
     }
 
