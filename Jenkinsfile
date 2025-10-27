@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
       image 'docker:24.0.7-cli'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
+      args '--entrypoint="" -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
 
@@ -21,6 +21,12 @@ pipeline {
   }
 
   stages {
+    stage('Verify Docker Access') {
+      steps {
+        sh 'docker version'
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout scm
