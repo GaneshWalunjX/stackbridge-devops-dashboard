@@ -25,6 +25,13 @@ pipeline {
       }
     }
 
+    stage('Verify Kubernetes Access') {
+      steps {
+        sh 'kubectl version --client'
+        sh 'kubectl get nodes'
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -67,8 +74,8 @@ pipeline {
     stage('Inject Image Tags') {
       steps {
         sh '''
-          sed -i "s|image: .*stackbridge-devops-dashboard-backend.*|image: ${REGISTRY}/${IMAGE_BACKEND}|" ${K8S_MANIFESTS}/backend-deployment.yaml
-          sed -i "s|image: .*stackbridge-devops-dashboard-frontend.*|image: ${REGISTRY}/${IMAGE_FRONTEND}|" ${K8S_MANIFESTS}/frontend-deployment.yaml
+          sed -i "s|image: .*stackbridge-backend.*|image: ${REGISTRY}/${IMAGE_BACKEND}|" ${K8S_MANIFESTS}/backend-deployment.yaml
+          sed -i "s|image: .*stackbridge-frontend.*|image: ${REGISTRY}/${IMAGE_FRONTEND}|" ${K8S_MANIFESTS}/frontend-deployment.yaml
         '''
       }
     }
@@ -77,7 +84,6 @@ pipeline {
       steps {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
           sh '''
-            kubectl version --client || (echo "kubectl not available" && exit 1)
             kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
             kubectl apply -f ${K8S_MANIFESTS}/db-pv.yaml
             kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
