@@ -63,8 +63,8 @@ pipeline {
     stage('Lint Frontend') {
       steps {
         sh '''
-          docker build -t frontend-test frontend
-          docker run --rm frontend-test npm run lint || echo "Frontend lint failed"
+          docker build -t frontend-lint --target build frontend
+          docker run --rm frontend-lint npm run lint || echo "Frontend lint failed"
         '''
       }
     }
