@@ -41,12 +41,13 @@ pipeline {
     stage('Inject Image Tags') {
       agent {
         docker {
-          image 'lachlanevenson/k8s-kubectl:v1.27.3'
+          image 'alpine:3.19'
           args '--entrypoint=""'
         }
       }
       steps {
         sh '''
+          apk add --no-cache sed
           sed -i "s|image: .*stackbridge-backend.*|image: ${REGISTRY}/${IMAGE_BACKEND}|" ${K8S_MANIFESTS}/backend-deployment.yaml
           sed -i "s|image: .*stackbridge-frontend.*|image: ${REGISTRY}/${IMAGE_FRONTEND}|" ${K8S_MANIFESTS}/frontend-deployment.yaml
         '''
@@ -56,7 +57,7 @@ pipeline {
     stage('Deploy to Kubernetes') {
       agent {
         docker {
-          image 'lachlanevenson/k8s-kubectl:v1.27.3'
+          image 'bitnami/kubectl:1.27'
           args '--entrypoint=""'
         }
       }
