@@ -2,10 +2,10 @@ pipeline {
   agent none
 
   environment {
-    REGISTRY             = "docker.io/ganesha7"
-    IMAGE_BACKEND        = "stackbridge-devops-dashboard-backend:${BUILD_NUMBER}"
-    IMAGE_FRONTEND       = "stackbridge-devops-dashboard-frontend:${BUILD_NUMBER}"
-    K8S_MANIFESTS        = "k8s"
+    REGISTRY       = "docker.io/ganesha7"
+    IMAGE_BACKEND  = "stackbridge-devops-dashboard-backend:${BUILD_NUMBER}"
+    IMAGE_FRONTEND = "stackbridge-devops-dashboard-frontend:${BUILD_NUMBER}"
+    K8S_MANIFESTS  = "k8s"
   }
 
   options {
@@ -62,18 +62,21 @@ pipeline {
         }
       }
       steps {
-        sh '''
-          kubectl version --client
-          kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-pv.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-deployment.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/db-service.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/backend-deployment.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/backend-service.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/frontend-deployment.yaml
-          kubectl apply -f ${K8S_MANIFESTS}/frontend-service.yaml
-        '''
+        withCredentials([file(credentialsId: 'kubeconfig-stackbridge', variable: 'KUBECONFIG')]) {
+          sh '''
+            kubectl version --client
+            kubectl get nodes
+            kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-pv.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-pvc.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-deployment.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/db-service.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/backend-deployment.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/backend-service.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/frontend-deployment.yaml
+            kubectl apply -f ${K8S_MANIFESTS}/frontend-service.yaml
+          '''
+        }
       }
     }
   }
