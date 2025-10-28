@@ -28,9 +28,14 @@ pipeline {
           passwordVariable: 'DOCKER_PASS'
         )]) {
           sh '''
+            echo "[INFO] Logging into DockerHub"
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+            echo "[INFO] Building and pushing backend image"
             docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_BACKEND} backend
             docker push ${REGISTRY}/${IMAGE_BACKEND}
+
+            echo "[INFO] Building and pushing frontend image"
             docker build --pull --no-cache -t ${REGISTRY}/${IMAGE_FRONTEND} frontend
             docker push ${REGISTRY}/${IMAGE_FRONTEND}
           '''
@@ -47,6 +52,7 @@ pipeline {
       }
       steps {
         sh '''
+          echo "[INFO] Injecting image tags into Kubernetes manifests"
           apk add --no-cache sed
           sed -i "s|image: .*stackbridge-backend.*|image: ${REGISTRY}/${IMAGE_BACKEND}|" ${K8S_MANIFESTS}/backend-deployment.yaml
           sed -i "s|image: .*stackbridge-frontend.*|image: ${REGISTRY}/${IMAGE_FRONTEND}|" ${K8S_MANIFESTS}/frontend-deployment.yaml
@@ -62,13 +68,14 @@ pipeline {
         }
       }
       steps {
+        sh 'echo "[DEBUG] Deploy stage started. Workspace: $(pwd)"'
         withCredentials([file(credentialsId: 'kubeconfig-stackbridge', variable: 'KUBECONFIG')]) {
           sh '''
-            echo "[INFO] Validating kubeconfig:"
-            ls -l $KUBECONFIG
-            cat $KUBECONFIG
+            echo "[INFO] Validating kubeconfig file"
+            ls -l $KUBECONFIG || { echo "[ERROR] kubeconfig not found"; exit 1; }
+            head -n 10 $KUBECONFIG || { echo "[ERROR] kubeconfig unreadable"; exit 1; }
 
-            echo "[INFO] Running kubectl commands:"
+            echo "[INFO] Running kubectl commands"
             kubectl version --client
             kubectl get nodes
             kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
