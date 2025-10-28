@@ -64,6 +64,11 @@ pipeline {
       steps {
         withCredentials([file(credentialsId: 'kubeconfig-stackbridge', variable: 'KUBECONFIG')]) {
           sh '''
+            echo "[INFO] Validating kubeconfig:"
+            ls -l $KUBECONFIG
+            cat $KUBECONFIG
+
+            echo "[INFO] Running kubectl commands:"
             kubectl version --client
             kubectl get nodes
             kubectl apply -f ${K8S_MANIFESTS}/namespace.yaml
