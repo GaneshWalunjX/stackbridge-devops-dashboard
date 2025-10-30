@@ -5,8 +5,8 @@ metadata:
   namespace: stackbridge-lab
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
     kind: Deployment
+    apiVersion: apps/v1
     name: backend
   minReplicas: 3
   maxReplicas: 10

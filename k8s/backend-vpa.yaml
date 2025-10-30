@@ -5,8 +5,8 @@ metadata:
   namespace: stackbridge-lab
 spec:
   targetRef:
-    apiVersion: apps/v1
     kind: Deployment
+    apiVersion: apps/v1
     name: backend
   updatePolicy:
     updateMode: "Auto"

@@ -1,27 +1,26 @@
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: frontend
-  namespace: stackbridge-lab
-  labels:
-    app: frontend
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
+  kind: Deployment
+  apiVersion: apps/v1
+  metadata:
+    name: frontend
+    namespace: stackbridge-lab
+    labels:
       app: frontend
-  template:
-    metadata:
-      labels:
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
         app: frontend
-    spec:
-      containers:
-        - name: frontend
-          image: ganesha7/stackbridge-frontend:latest
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 80
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
+    template:
+      metadata:
+        labels:
+          app: frontend
+      spec:
+        containers:
+          - name: frontend
+            image: ganesha7/stackbridge-frontend:latest
+            ports:
+              - containerPort: 80
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "128Mi"
