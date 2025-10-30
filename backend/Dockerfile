@@ -15,8 +15,6 @@ WORKDIR /app
 
 COPY --from=builder /app ./
 
-RUN rm -f .env
-
 EXPOSE 5000
 
 CMD ["node", "server.js"]
