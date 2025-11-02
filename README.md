@@ -1,36 +1,55 @@
-# StackBridge DevOps Dashboard
+# StackBridge — DevOps Deployment
 
-A production-grade DevOps dashboard built with React, Tailwind CSS, Docker, Jenkins, and Kubernetes. This project simulates real-world deployment pipelines, container health monitoring, and CI/CD metrics for infrastructure validation.
+**StackBridge** demonstrates a production-grade, end-to-end DevOps deployment for a full-stack web application using **Kubernetes** and **Jenkins**. The repository focuses on infrastructure, observability, secure configuration, and CI/CD.
 
-## Features
+---
 
-- Secure login and registration flow
-- Dashboard with container status, pipeline metrics, and logs
-- Protected routes using token-based authentication
-- Responsive UI powered by Tailwind CSS
-- Simulated CI/CD pipeline integration
-- Dockerized frontend for deployment testing
-- Kubernetes-ready structure for orchestration
+## Quick Start
+
+```bash
+git clone <repo-url>
+cd stackbridge
+
+kubectl apply -f k8s/
+```
+---
+
+## Objective
+
+Deploy and maintain a **modular, production-minded infrastructure stack** with:
+
+* Clear separation of concerns
+* Secure secret injection via your CI/secrets manager
+* CI-driven rollout and validation (Jenkins pipeline)
+* Observability, autoscaling, and namespace hygiene
+
+---
 
 ## Tech Stack
 
-| Layer        | Tools & Frameworks                     |
-|--------------|----------------------------------------|
-| Frontend     | React, Tailwind CSS                    |
-| Auth         | Token-based (localStorage/session)     |
-| CI/CD        | Jenkins, GitHub Actions (optional)     |
-| Container    | Docker                                 |
-| Orchestration| Kubernetes                             |
+* **Frontend**: React (served via NGINX)
+* **Backend**: Node.js (exposes `/metrics` on port `5000`)
+* **Database**: PostgreSQL (PVC-backed)
+* **Containerization**: Docker
+* **Orchestration**: Kubernetes (manifests / Kustomize under `k8s/`)
+* **CI/CD**: Jenkins (Pipeline-as-Code)
+* **Monitoring**: Prometheus Operator + ServiceMonitor
+* **Ingress**: NGINX Ingress Controller
+* **Autoscaling**: HorizontalPodAutoscaler (autoscaling/v2, CPU-based)
 
-## Installation
+---
 
-```bash
-# Clone the repo
-git clone https://github.com/ganesh-cl7/stackbridge-devops-dashboard.git
-cd stackbridge-devops-dashboard/frontend
+## Run / Deploy (policy)
 
-# Install dependencies
-npm install
+* **Single manual command**: `kubectl apply -f k8s/ -n stackbridge-lab` — use this to deploy the entire stack from the `k8s/` folder.
+* **Recommended (automated)**: Jenkins pipeline handles build → tag → push → deploy. Jenkins injects kubeconfig/credentials and performs rollout validation. No changes to the app code are required.
+---
 
-# Start the development server
-npm start
+## Notes 
+
+* Keep secrets out of source control — use Vault, SealedSecrets, ExternalSecrets, or CI secret injection.
+* Replace HostPath PVs (if present) with cloud/block storage in real production.
+* Use Kustomize overlays under `k8s/` for environment-specific values (images, replica counts, resources).
+* Ensure Jenkins (or CI) runs smoke tests and `kubectl rollout status` as part of deployment.
+---
+
