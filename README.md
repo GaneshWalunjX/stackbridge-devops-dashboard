@@ -12,16 +12,19 @@ The repository focuses on infrastructure automation, observability, secure confi
 git clone <https://github.com/GaneshWalunjX/stackbridge-devops-dashboard.git>
 cd stackbridge
 ```
+
 ```bash
 **2. Build Docker images**
 docker build -t <registry>/stackbridge-frontend:1.0.0 ./frontend
 docker build -t <registry>/stackbridge-backend:1.0.0 ./backend
 ```
+
 ```bash
 **3. Push images to registry**
 docker push <registry>/stackbridge-frontend:1.0.0
 docker push <registry>/stackbridge-backend:1.0.0
 ```
+
 ```bash
 **4. Deploy to Kubernetes**
 All manifests are stored inside the k8s/ directory.
@@ -32,12 +35,14 @@ kubectl apply -f k8s/namespace.yaml
 # Step 2: Deploy the full stack
 kubectl apply -f k8s/ -n stackbridge-lab
 ```
+
 ```bash
 **5. Verify Deployment**
 kubectl get pods,svc,ingress -n stackbridge-lab
 kubectl rollout status deployment/frontend -n stackbridge-lab
 kubectl rollout status deployment/backend -n stackbridge-lab
 ```
+
 ```bash
 **6. Access Application**
 http://<ingress-ip>/frontend  
@@ -72,10 +77,11 @@ Deploy and maintain a **modular, production-minded infrastructure stack** with:
 
 ---
 
-## Kubernetes Architecture
+## **Kubernetes Architecture**
 
-Managed deployments, services, ingress routing, and autoscaling using HPA (CPU-based) and VPA (memory-based).
-All manifests stored in the k8s/ directory ensure clean namespace management and modular deployment.
+Kubernetes manages the deployments, services, ingress routing, and autoscaling for the application.
+All manifests are organized in the `k8s/` directory, ensuring clean namespace structure, modular configuration, and reliable production-grade rollout.
+
 ---
 
 ## CI/CD Pipeline (Jenkins)
