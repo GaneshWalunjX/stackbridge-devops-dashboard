@@ -1,64 +1,6 @@
 # StackBridge — DevOps Deployment
 
-**StackBridge** demonstrates a production-grade, end-to-end DevOps deployment for a full-stack web application using **Docker**, **Kubernetes**, **Terraform**, **Jenkins**, and **Observability**.
-The repository focuses on infrastructure automation, observability, secure configuration, and CI/CD integration.
-
----
-
-## Run / Deploy Commands
-
-```bash
-**1. Clone the repository**
-git clone <https://github.com/GaneshWalunjX/stackbridge-devops-dashboard.git>
-cd stackbridge
-```
-
-```bash
-**2. Build Docker images**
-docker build -t <registry>/stackbridge-frontend:1.0.0 ./frontend
-docker build -t <registry>/stackbridge-backend:1.0.0 ./backend
-```
-
-```bash
-**3. Push images to registry**
-docker push <registry>/stackbridge-frontend:1.0.0
-docker push <registry>/stackbridge-backend:1.0.0
-```
-
-```bash
-**4. Deploy to Kubernetes**
-All manifests are stored inside the k8s/ directory.
-
-# Step 1: Apply the namespace
-kubectl apply -f k8s/namespace.yaml
-
-# Step 2: Deploy the full stack
-kubectl apply -f k8s/ -n stackbridge-lab
-```
-
-```bash
-**5. Verify Deployment**
-kubectl get pods,svc,ingress -n stackbridge-lab
-kubectl rollout status deployment/frontend -n stackbridge-lab
-kubectl rollout status deployment/backend -n stackbridge-lab
-```
-
-```bash
-**6. Access Application**
-http://<ingress-ip>/frontend  
-http://<ingress-ip>/backend
-```
-
----
-
-## Objective
-
-Deploy and maintain a **modular, production-minded infrastructure stack** with:
-
-* Clear separation of concerns
-* Secure secret injection via CI or a secrets manager
-* CI-driven rollout and validation (Jenkins pipeline)
-* Observability, autoscaling, and namespace hygiene
+**StackBridge** demonstrates a production-grade, end-to-end DevOps deployment for a full-stack web application using **Docker**, **Kubernetes**, **Terraform**, **Jenkins**, and **Observability**. The repository focuses on infrastructure automation, observability, secure configuration, and CI/CD integration.
 
 ---
 
@@ -75,6 +17,86 @@ Deploy and maintain a **modular, production-minded infrastructure stack** with:
 * **Ingress**: NGINX Ingress Controller
 * **Autoscaling**: HorizontalPodAutoscaler (CPU-based) and VerticalPodAutoscaler (Memory-based)
 
+---
+### Clone the repository
+
+```bash
+git clone https://github.com/GaneshWalunjX/stackbridge-devops-dashboard.git
+cd stackbridge-devops-dashboard
+```
+
+---
+
+## Frontend (React + NGINX)
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+---
+
+## Backend (Node.js + PostgreSQL)
+
+```bash
+cd backend
+npm install
+npm start
+```
+---
+
+
+## Docker Build & Run
+
+### Frontend
+
+```bash
+docker build -t stackbridge-frontend:local ./frontend
+docker run -p 3000:80 stackbridge-frontend:local
+```
+
+### Backend
+
+```bash
+docker build -t stackbridge-backend:local ./backend
+docker run -p 5000:5000 stackbridge-backend:local
+```
+
+---
+
+## Kubernetes Deployment
+
+### Create namespace
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+```
+
+### Apply manifests
+
+```bash
+kubectl apply -f k8s/ -n stackbridge-lab
+```
+
+---
+
+## Access Application
+
+```bash
+http://<ingress-ip>/frontend
+http://<ingress-ip>/backend
+```
+
+---
+
+## Objective
+
+Deploy and maintain a **modular, production-minded infrastructure stack** with:
+
+* Clear separation of concerns
+* Secure secret injection via CI or a secrets manager
+* CI-driven rollout and validation (Jenkins pipeline)
+* Observability, autoscaling, and namespace hygiene
 ---
 
 ## **Kubernetes Architecture**
