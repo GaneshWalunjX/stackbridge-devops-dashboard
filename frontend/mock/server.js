@@ -1,4 +1,3 @@
-// mock/server.js
 const jsonServer = require("json-server");
 const server = jsonServer.create();
 const router = jsonServer.router("mock/db.json");
@@ -7,7 +6,6 @@ const middlewares = jsonServer.defaults();
 server.use(middlewares);
 server.use(jsonServer.bodyParser);
 
-// Custom login route
 server.post("/api/login", (req, res) => {
   const { email, password } = req.body;
   const user = router.db.get("users").find({ email, password }).value();
@@ -19,7 +17,6 @@ server.post("/api/login", (req, res) => {
   }
 });
 
-// Dashboard route
 server.get("/api/dashboard", (req, res) => {
   const data = router.db.get("dashboard").value();
   res.json(data);
