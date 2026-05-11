@@ -7,6 +7,6 @@ metadata:
     app: backend
 data:
   DB_HOST: postgres.stackbridge-lab.svc.cluster.local
-  DB_PORT: "5432"
+  DB_PORT: "5432
   DB_NAME: stackbridge
   DB_USER: ganesh
